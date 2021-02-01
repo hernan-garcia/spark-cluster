@@ -1,22 +1,44 @@
 version: "3.3"
+volumes:
+  shared-workspace:
+    name: "hadoop-distributed-file-system"
+    driver: local
+    #- "/root/simulated_hdfs:/opt/workspace"
+
 networks:
   spark-network:
+    driver: bridge
+    ipam:
+      driver: default
+
 services:
   spark-master:
-    image: qwertyjack/spark
+    image: bench/spark:3.0.1
     container_name: spark-master
     hostname: spark-master
     command: >
       /bin/sh -c '
       /spark/sbin/start-master.sh
       && tail -f /spark/logs/*'
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - 8080:8080
+      - 8084:8080
       - 7077:7077
+      #- 4041:4040
+    volumes:
+      #- shared-workspace:/opt/workspace
+      - "/root/simulated_hdfs:/opt/workspace"
     networks:
       - spark-network
-  spark-worker:
-    image: qwertyjack/spark
+    environment:
+      - SPARK_MASTER_CORES=2
+
+  spark-worker1:
+    image: bench/spark:3.0.1
+    container_name: spark-worker1
+    hostname: spark-worker1
     depends_on:
       - spark-master
     command: >
@@ -25,9 +47,60 @@ services:
       && tail -f /spark/logs/*'
     environment:
       - SPARK_MASTER=spark://spark-master:7077
-      - SPARK_WORKER_WEBUI_PORT=8080
-    ports:
-      - 8080
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=4g
+      #- SPARK_WORKER_WEBUI_PORT=8082
+    #ports:
+    #  - 8080
+      - 8086:8081 
+    volumes:
+      #- shared-workspace:/opt/workspace
+      - "/root/simulated_hdfs:/opt/workspace"
     networks:
       - spark-network
+
+  spark-worker2:
+    image: bench/spark:3.0.1
+    container_name: spark-worker2
+    hostname: spark-worker2
+    depends_on:
+      - spark-master
+    command: >
+      /bin/sh -c '
+      /spark/sbin/start-slave.sh $$SPARK_MASTER
+      && tail -f /spark/logs/*'
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_WEBUI_PORT=8085
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=4g
+
+    ports:
+      - 8085
+    #  - 8083:8083
+    volumes:
+      #- shared-workspace:/opt/workspace
+      - "/root/simulated_hdfs:/opt/workspace"
+    networks:
+      - spark-network
+
+  #Also known as getaway machine
+  edge-node:
+    image: bench/spark:3.0.1
+    container_name: edge-node
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+    stdin_open: true
+    tty: true
+    networks:
+      - spark-network
+    volumes:
+      #- shared-workspace:/opt/workspace
+      - "/root/simulated_hdfs:/opt/workspace"
+    ports:
+      - 4041:4040
+
+
 

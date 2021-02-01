@@ -1,6 +1,3 @@
-![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/qwertyjack/spark)
-![Docker Pulls](https://img.shields.io/docker/pulls/qwertyjack/spark)
-![Image Size](https://img.shields.io/microbadger/image-size/qwertyjack/spark/latest)
 
 # Spark Cluster
 
@@ -39,7 +36,7 @@ $ docker exec -it spark-master bin/pyspark --master spark://spark-master:7077
 
 ```sh
 # run java app
-docker exec spark-master bin/spark-submit --master spark://spark-master:7077 --class org.apache.spark.examples.SparkPi examples/jars/spark-examples_2.11-2.4.3.jar 1000
+docker exec spark-master bin/spark-submit --master spark://spark-master:7077 --class org.apache.spark.examples.SparkPi examples/jars/spark-examples_2.11-3.0.1.jar 1000
 
 # run python app
 docker exec spark-master bin/spark-submit --master spark://spark-master:7077 examples/src/main/python/pi.py 1000
